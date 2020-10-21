@@ -1,16 +1,21 @@
 #include <glad/glad.h>
 #include <glfw3.h>
 #include <iostream>
+#include <random>
+#include <math.h>
 
 #include "stb_image.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#define PI 3.1415927
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void character_random_move();
 
 // screen size
 const unsigned int SCR_WIDTH = 800;
@@ -25,6 +30,21 @@ float yaw = -90.0f;
 float pitch = 0.0f;
 float fov = 45.0f;
 bool firstMouse = true;
+
+// character random move settings
+float delta = 0.005;
+float currentX = -7.0;
+float currentZ = -7.0;
+float limitCoord = 8.0;
+
+std::random_device rd;
+std::default_random_engine eng(rd());
+std::uniform_real_distribution<float> distr1(-PI/2, PI/2);
+std::uniform_real_distribution<float> distr2(PI/2, 3*PI/2);
+std::uniform_real_distribution<float> distr3(0, PI);
+std::uniform_real_distribution<float> distr4(PI, 2*PI);
+float angle = distr1(eng);
+
 
 // process time
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
@@ -66,12 +86,56 @@ const float cube_vertices[] = {
     -1.0f, -1.0f,  1.0f,  1.0f, 1.0f,
     -1.0f, -1.0f, -1.0f,  0.0f, 0.0f,
 
-    -1.0f,  1.0f, -1.0f,  0.0f, 1.0f,
-     1.0f,  1.0f, -1.0f,  0.0f, 0.0f,
-     1.0f,  1.0f,  1.0f,  1.0f, 0.0f,
-     1.0f,  1.0f,  1.0f,  1.0f, 0.0f,
-    -1.0f,  1.0f,  1.0f,  1.0f, 1.0f,
-    -1.0f,  1.0f, -1.0f,  0.0f, 1.0f
+    -1.0f,  1.0f, -1.0f,  1.0f, 0.5f,
+     1.0f,  1.0f, -1.0f,  1.0f, 1.0f,
+     1.0f,  1.0f,  1.0f,  0.0f, 1.0f,
+     1.0f,  1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f,  1.0f,  1.0f,  0.0f, 0.5f,
+    -1.0f,  1.0f, -1.0f,  1.0f, 0.5f
+};
+
+const float character_vertices[] = {
+    -1.0f, -2.0f, -1.0f,  1.0f, 0.0f,
+     1.0f, -2.0f, -1.0f,  0.0f, 0.0f,
+     1.0f,  2.0f, -1.0f,  0.0f, 1.0f,
+     1.0f,  2.0f, -1.0f,  0.0f, 1.0f,
+    -1.0f,  2.0f, -1.0f,  1.0f, 1.0f,
+    -1.0f, -2.0f, -1.0f,  1.0f, 0.0f,
+
+    -1.0f, -2.0f,  1.0f,  0.0f, 0.0f,
+     1.0f, -2.0f,  1.0f,  1.0f, 0.0f,
+     1.0f,  2.0f,  1.0f,  1.0f, 1.0f,
+     1.0f,  2.0f,  1.0f,  1.0f, 1.0f,
+    -1.0f,  2.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -2.0f,  1.0f,  0.0f, 0.0f,
+
+    -1.0f,  2.0f,  1.0f,  1.0f, 1.0f,
+    -1.0f,  2.0f, -1.0f,  0.0f, 1.0f,
+    -1.0f, -2.0f, -1.0f,  0.0f, 0.0f,
+    -1.0f, -2.0f, -1.0f,  0.0f, 0.0f,
+    -1.0f, -2.0f,  1.0f,  1.0f, 0.0f,
+    -1.0f,  2.0f,  1.0f,  1.0f, 1.0f,
+
+     1.0f,  2.0f,  1.0f,  0.0f, 1.0f,
+     1.0f,  2.0f, -1.0f,  1.0f, 1.0f,
+     1.0f, -2.0f, -1.0f,  1.0f, 0.0f,
+     1.0f, -2.0f, -1.0f,  1.0f, 0.0f,
+     1.0f, -2.0f,  1.0f,  0.0f, 0.0f,
+     1.0f,  2.0f,  1.0f,  0.0f, 1.0f,
+
+    -1.0f, -2.0f, -1.0f,  0.0f, 0.0f,
+     1.0f, -2.0f, -1.0f,  0.0f, 1.0f,
+     1.0f, -2.0f,  1.0f,  1.0f, 0.0f,
+     1.0f, -2.0f,  1.0f,  1.0f, 0.0f,
+    -1.0f, -2.0f,  1.0f,  1.0f, 1.0f,
+    -1.0f, -2.0f, -1.0f,  0.0f, 0.0f,
+
+    -1.0f,  2.0f, -1.0f,  1.0f, 0.5f,
+     1.0f,  2.0f, -1.0f,  1.0f, 1.0f,
+     1.0f,  2.0f,  1.0f,  0.0f, 1.0f,
+     1.0f,  2.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f,  2.0f,  1.0f,  0.0f, 0.5f,
+    -1.0f,  2.0f, -1.0f,  1.0f, 0.5f
 };
 
 int main(int argc, char** argv)
@@ -160,7 +224,7 @@ int main(int argc, char** argv)
     glDeleteShader(fragmentShader);
 
     // generate texture
-    unsigned int texture_soil, texture_crops;
+    unsigned int texture_soil, texture_crops, texture_tomoko;
     glGenTextures(1, &texture_soil);
     glBindTexture(GL_TEXTURE_2D, texture_soil);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -188,6 +252,24 @@ int main(int argc, char** argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     data = stbi_load("cornfield.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    glGenTextures(1, &texture_tomoko);
+    glBindTexture(GL_TEXTURE_2D, texture_tomoko);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    data = stbi_load("tomoko.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -237,16 +319,16 @@ int main(int argc, char** argv)
 
     // configure others
     glm::vec3 cubePositions[] = {
-        glm::vec3(0.0f,  0.5f,  0.0f),
-        glm::vec3(5.0f,  0.5f, 0.0f),
-        glm::vec3(5.0f, 0.5f, 5.0f),
-        glm::vec3(0.0f, 0.5f, 5.0f),
-        glm::vec3(-5.0f, 0.5f, 5.0f),
-        glm::vec3(-5.0f,  0.5f, 0.0f),
-        glm::vec3(-5.0f, 0.5f, -5.0f),
-        glm::vec3(0.0f,  0.5f, -5.0f),
-        glm::vec3(5.0f,  0.5f, -5.0f),
-        glm::vec3(10.0f,  0.5f, 10.0f)
+        glm::vec3(0.0f,  1.0f,  0.0f),
+        glm::vec3(5.0f,  1.0f, 0.0f),
+        glm::vec3(5.0f, 1.0f, 5.0f),
+        glm::vec3(0.0f, 1.0f, 5.0f),
+        glm::vec3(-5.0f, 1.0f, 5.0f),
+        glm::vec3(-5.0f,  1.0f, 0.0f),
+        glm::vec3(-5.0f, 1.0f, -5.0f),
+        glm::vec3(0.0f,  1.0f, -5.0f),
+        glm::vec3(5.0f,  1.0f, -5.0f),
+        glm::vec3(10.0f,  1.0f, 10.0f)
     };
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -261,6 +343,19 @@ int main(int argc, char** argv)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     // texture coord attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    unsigned int VBO_char, VAO_char;
+    glGenVertexArrays(1, &VAO_char);
+    glGenBuffers(1, &VBO_char);
+
+    glBindVertexArray(VAO_char);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_char);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(character_vertices), character_vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
@@ -316,6 +411,22 @@ int main(int argc, char** argv)
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
+
+        // draw character
+        projLoc = glGetUniformLocation(shaderProgram, "projection");
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        viewLoc = glGetUniformLocation(shaderProgram, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+        character_random_move(); // calculate current position
+        glBindTexture(GL_TEXTURE_2D, texture_tomoko);
+        glBindVertexArray(VAO_char);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(currentX, 1.6f, currentZ));
+        model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
+        modelLoc = glGetUniformLocation(shaderProgram, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -392,4 +503,37 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
         fov = 1.0f;
     if (fov >= 45.0f)
         fov = 45.0f;
+}
+
+void character_random_move() {
+    float newX = currentX + delta * cos(angle);
+    float newZ = currentZ + delta * sin(angle);
+
+    if (newX < -8)
+    {     
+        angle = distr1(eng);
+    }
+    else if (newX > 8)
+    {
+        angle = distr2(eng);
+    }
+    else if (newZ < -8)
+    {
+        angle = distr3(eng);
+    }
+    else if (newZ > 8)
+    {
+        angle = distr4(eng);
+    }
+    else
+    {
+        currentX = newX;
+        currentZ = newZ;
+        return;
+    }
+
+    currentX = currentX + delta * cos(angle);
+    currentZ = currentZ + delta * sin(angle);
+
+    return;
 }
