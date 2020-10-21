@@ -16,6 +16,7 @@ void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void character_random_move();
+bool check_collision(float ax, float az, float aSize, float bx, float bz, float bSize);
 
 // screen size
 const unsigned int SCR_WIDTH = 800;
@@ -199,10 +200,11 @@ int main(int argc, char** argv)
     const char* fragmentShaderSource = "#version 330 core\n"
         "out vec4 FragColor;\n"
         "in vec2 TexCoord;\n"
+        "uniform vec4 ourColor;"
         "uniform sampler2D ourTexture;\n"
         "void main()\n"
         "{\n"
-        "    FragColor = texture(ourTexture, TexCoord);\n"
+        "    FragColor = texture(ourTexture, TexCoord) * ourColor;\n"
         "}\0";
     unsigned int fragmentShader;
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -389,6 +391,8 @@ int main(int argc, char** argv)
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         int projLoc = glGetUniformLocation(shaderProgram, "projection");
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        int colorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+        glUniform4f(colorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
 
         glBindTexture(GL_TEXTURE_2D, texture_soil);
         glBindVertexArray(VAO_soil);
@@ -402,12 +406,24 @@ int main(int argc, char** argv)
 
         glBindTexture(GL_TEXTURE_2D, texture_crops);
         glBindVertexArray(VAO);
+        bool judgeCollision;
         for (unsigned int i = 0; i < 10; i++)
         {
             model = glm::mat4(1.0f);
             model = glm::translate(model, cubePositions[i]);
             modelLoc = glGetUniformLocation(shaderProgram, "model");
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+            colorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+            judgeCollision = check_collision(currentX-0.8, currentZ-0.8, 1.6, cubePositions[i][0]-1, cubePositions[i][2]-1, 2);
+            if (judgeCollision)
+            {
+                glUniform4f(colorLocation, 5.0f, 5.0f, 5.0f, 1.0f);
+            }
+            else
+            {
+                glUniform4f(colorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+            }
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
@@ -426,6 +442,9 @@ int main(int argc, char** argv)
         model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
         modelLoc = glGetUniformLocation(shaderProgram, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        colorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+        glUniform4f(colorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glfwSwapBuffers(window);
@@ -505,7 +524,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
         fov = 45.0f;
 }
 
-void character_random_move() {
+void character_random_move() 
+{
     float newX = currentX + delta * cos(angle);
     float newZ = currentZ + delta * sin(angle);
 
@@ -536,4 +556,12 @@ void character_random_move() {
     currentZ = currentZ + delta * sin(angle);
 
     return;
+}
+
+bool check_collision(float ax, float az, float aSize, float bx, float bz, float bSize) 
+{
+    bool collisionX = ax + aSize >= bx && bx + bSize >= ax;
+    bool collisionZ = az + aSize >= bz && bz + bSize >= az;
+
+    return collisionX && collisionZ;
 }
