@@ -227,6 +227,9 @@ int main(int argc, char** argv)
 
     // generate texture
     unsigned int texture_soil, texture_crops, texture_tomoko;
+    unsigned int texture_bearing[4];
+    const char* bearing_filenames[] = {"W.jpg", "S.jpg", "E.jpg", "N.jpg"};
+
     glGenTextures(1, &texture_soil);
     glBindTexture(GL_TEXTURE_2D, texture_soil);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -249,10 +252,6 @@ int main(int argc, char** argv)
 
     glGenTextures(1, &texture_crops);
     glBindTexture(GL_TEXTURE_2D, texture_crops);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     data = stbi_load("cornfield.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
@@ -267,10 +266,6 @@ int main(int argc, char** argv)
 
     glGenTextures(1, &texture_tomoko);
     glBindTexture(GL_TEXTURE_2D, texture_tomoko);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     data = stbi_load("tomoko.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
@@ -282,6 +277,23 @@ int main(int argc, char** argv)
         std::cout << "Failed to load texture" << std::endl;
     }
     stbi_image_free(data);
+
+    for (int i = 0; i < 4; i++)
+    {
+        glGenTextures(1, &(texture_bearing[i]));
+        glBindTexture(GL_TEXTURE_2D, texture_bearing[i]);
+        data = stbi_load(bearing_filenames[i], &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        else
+        {
+            std::cout << "Failed to load texture" << std::endl;
+        }
+        stbi_image_free(data);
+    }
 
     // configure ground
     float vertices[] = {
@@ -361,6 +373,36 @@ int main(int argc, char** argv)
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    float brn_vertices[] = {
+             4.0f,   4.0f, 0.0f,   0.0f, 1.0f,
+             4.0f,  -4.0f, 0.0f,   0.0f, 0.0f,
+            -4.0f,  -4.0f, 0.0f,   1.0f, 0.0f,
+            -4.0f,   4.0f, 0.0f,   1.0f, 1.0f
+    };
+    glm::vec3 brnPositions[] = {
+        glm::vec3(20.0f,  10.0f,  0.0f),
+        glm::vec3(0.0f,  10.0f, -20.0f),
+        glm::vec3(-20.0f, 10.0f, 0.0f),
+        glm::vec3(0.0f, 10.0f, 20.0f)
+    };
+
+    unsigned int EBO_brn, VBO_brn, VAO_brn;
+    glGenVertexArrays(1, &VAO_brn);
+    glGenBuffers(1, &VBO_brn);
+    glGenBuffers(1, &EBO_brn);
+    
+    glBindVertexArray(VAO_brn);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_brn);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(brn_vertices), brn_vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_brn);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
     // render loop
     while (!glfwWindowShouldClose(window))
     {
@@ -397,6 +439,28 @@ int main(int argc, char** argv)
         glBindTexture(GL_TEXTURE_2D, texture_soil);
         glBindVertexArray(VAO_soil);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        // draw bearing signs
+        model = glm::mat4(1.0f);
+
+        for (int i = 0; i < 4; i++)
+        {
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, brnPositions[i]);
+            model = glm::rotate(model, glm::radians((i+1) * 90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            modelLoc = glGetUniformLocation(shaderProgram, "model");
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            viewLoc = glGetUniformLocation(shaderProgram, "view");
+            glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+            projLoc = glGetUniformLocation(shaderProgram, "projection");
+            glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+            colorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+            glUniform4f(colorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+
+            glBindTexture(GL_TEXTURE_2D, texture_bearing[i]);
+            glBindVertexArray(VAO_brn);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        }
 
         // draw others
         projLoc = glGetUniformLocation(shaderProgram, "projection");
@@ -471,14 +535,29 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 
     float cameraSpeed = 2.5f * deltaTime;
+    glm::vec3 tempPos;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraSpeed * cameraFront;
+        tempPos = cameraPos + cameraSpeed * cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraSpeed * cameraFront;
+        tempPos = cameraPos - cameraSpeed * cameraFront;
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        tempPos = cameraPos - glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        tempPos = cameraPos + glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
+    if (tempPos[1] < 0.005 || tempPos[1] > 20)
+        return;
+    else if (tempPos[0] < -19.995 || tempPos[0] > 19.995)
+    {
+        tempPos[0] = 0 - tempPos[0];
+    }
+    else if (tempPos[2] < -19.995 || tempPos[2] > 19.995)
+    {
+        tempPos[2] = 0 - tempPos[2];
+    }
+
+    cameraPos = tempPos;
+    return;
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
