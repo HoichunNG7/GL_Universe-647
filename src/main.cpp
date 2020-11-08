@@ -5,11 +5,10 @@
 #include <math.h>
 
 #include "stb_image.h"
+#include "parameter_config.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
-
-#define PI 3.1415927
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -18,26 +17,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void character_random_move();
 bool check_collision(float ax, float az, float aSize, float bx, float bz, float bSize);
 
-// screen size
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-
-// camera initial settings
-glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-float lastX = 400, lastY = 300;
-float yaw = -90.0f;
-float pitch = 0.0f;
-float fov = 45.0f;
-bool firstMouse = true;
-
-// character random move settings
-float delta = 0.005;
-float currentX = -7.0;
-float currentZ = -7.0;
-float limitCoord = 8.0;
-
 std::random_device rd;
 std::default_random_engine eng(rd());
 std::uniform_real_distribution<float> distr1(-PI/2, PI/2);
@@ -45,99 +24,6 @@ std::uniform_real_distribution<float> distr2(PI/2, 3*PI/2);
 std::uniform_real_distribution<float> distr3(0, PI);
 std::uniform_real_distribution<float> distr4(PI, 2*PI);
 float angle = distr1(eng);
-
-
-// process time
-float deltaTime = 0.0f; // 当前帧与上一帧的时间差
-float lastFrame = 0.0f; // 上一帧的时间
-
-const float cube_vertices[] = {
-    -1.0f, -1.0f, -1.0f,  1.0f, 0.0f,
-     1.0f, -1.0f, -1.0f,  0.0f, 0.0f,
-     1.0f,  1.0f, -1.0f,  0.0f, 1.0f,
-     1.0f,  1.0f, -1.0f,  0.0f, 1.0f,
-    -1.0f,  1.0f, -1.0f,  1.0f, 1.0f,
-    -1.0f, -1.0f, -1.0f,  1.0f, 0.0f,
-
-    -1.0f, -1.0f,  1.0f,  0.0f, 0.0f,
-     1.0f, -1.0f,  1.0f,  1.0f, 0.0f,
-     1.0f,  1.0f,  1.0f,  1.0f, 1.0f,
-     1.0f,  1.0f,  1.0f,  1.0f, 1.0f,
-    -1.0f,  1.0f,  1.0f,  0.0f, 1.0f,
-    -1.0f, -1.0f,  1.0f,  0.0f, 0.0f,
-
-    -1.0f,  1.0f,  1.0f,  1.0f, 1.0f,
-    -1.0f,  1.0f, -1.0f,  0.0f, 1.0f,
-    -1.0f, -1.0f, -1.0f,  0.0f, 0.0f,
-    -1.0f, -1.0f, -1.0f,  0.0f, 0.0f,
-    -1.0f, -1.0f,  1.0f,  1.0f, 0.0f,
-    -1.0f,  1.0f,  1.0f,  1.0f, 1.0f,
-
-     1.0f,  1.0f,  1.0f,  0.0f, 1.0f,
-     1.0f,  1.0f, -1.0f,  1.0f, 1.0f,
-     1.0f, -1.0f, -1.0f,  1.0f, 0.0f,
-     1.0f, -1.0f, -1.0f,  1.0f, 0.0f,
-     1.0f, -1.0f,  1.0f,  0.0f, 0.0f,
-     1.0f,  1.0f,  1.0f,  0.0f, 1.0f,
-
-    -1.0f, -1.0f, -1.0f,  0.0f, 0.0f,
-     1.0f, -1.0f, -1.0f,  0.0f, 1.0f,
-     1.0f, -1.0f,  1.0f,  1.0f, 0.0f,
-     1.0f, -1.0f,  1.0f,  1.0f, 0.0f,
-    -1.0f, -1.0f,  1.0f,  1.0f, 1.0f,
-    -1.0f, -1.0f, -1.0f,  0.0f, 0.0f,
-
-    -1.0f,  1.0f, -1.0f,  1.0f, 0.5f,
-     1.0f,  1.0f, -1.0f,  1.0f, 1.0f,
-     1.0f,  1.0f,  1.0f,  0.0f, 1.0f,
-     1.0f,  1.0f,  1.0f,  0.0f, 1.0f,
-    -1.0f,  1.0f,  1.0f,  0.0f, 0.5f,
-    -1.0f,  1.0f, -1.0f,  1.0f, 0.5f
-};
-
-const float character_vertices[] = {
-    -1.0f, -2.0f, -1.0f,  1.0f, 0.0f,
-     1.0f, -2.0f, -1.0f,  0.0f, 0.0f,
-     1.0f,  2.0f, -1.0f,  0.0f, 1.0f,
-     1.0f,  2.0f, -1.0f,  0.0f, 1.0f,
-    -1.0f,  2.0f, -1.0f,  1.0f, 1.0f,
-    -1.0f, -2.0f, -1.0f,  1.0f, 0.0f,
-
-    -1.0f, -2.0f,  1.0f,  0.0f, 0.0f,
-     1.0f, -2.0f,  1.0f,  1.0f, 0.0f,
-     1.0f,  2.0f,  1.0f,  1.0f, 1.0f,
-     1.0f,  2.0f,  1.0f,  1.0f, 1.0f,
-    -1.0f,  2.0f,  1.0f,  0.0f, 1.0f,
-    -1.0f, -2.0f,  1.0f,  0.0f, 0.0f,
-
-    -1.0f,  2.0f,  1.0f,  1.0f, 1.0f,
-    -1.0f,  2.0f, -1.0f,  0.0f, 1.0f,
-    -1.0f, -2.0f, -1.0f,  0.0f, 0.0f,
-    -1.0f, -2.0f, -1.0f,  0.0f, 0.0f,
-    -1.0f, -2.0f,  1.0f,  1.0f, 0.0f,
-    -1.0f,  2.0f,  1.0f,  1.0f, 1.0f,
-
-     1.0f,  2.0f,  1.0f,  0.0f, 1.0f,
-     1.0f,  2.0f, -1.0f,  1.0f, 1.0f,
-     1.0f, -2.0f, -1.0f,  1.0f, 0.0f,
-     1.0f, -2.0f, -1.0f,  1.0f, 0.0f,
-     1.0f, -2.0f,  1.0f,  0.0f, 0.0f,
-     1.0f,  2.0f,  1.0f,  0.0f, 1.0f,
-
-    -1.0f, -2.0f, -1.0f,  0.0f, 0.0f,
-     1.0f, -2.0f, -1.0f,  0.0f, 1.0f,
-     1.0f, -2.0f,  1.0f,  1.0f, 0.0f,
-     1.0f, -2.0f,  1.0f,  1.0f, 0.0f,
-    -1.0f, -2.0f,  1.0f,  1.0f, 1.0f,
-    -1.0f, -2.0f, -1.0f,  0.0f, 0.0f,
-
-    -1.0f,  2.0f, -1.0f,  1.0f, 0.5f,
-     1.0f,  2.0f, -1.0f,  1.0f, 1.0f,
-     1.0f,  2.0f,  1.0f,  0.0f, 1.0f,
-     1.0f,  2.0f,  1.0f,  0.0f, 1.0f,
-    -1.0f,  2.0f,  1.0f,  0.0f, 0.5f,
-    -1.0f,  2.0f, -1.0f,  1.0f, 0.5f
-};
 
 int main(int argc, char** argv)
 {
@@ -172,19 +58,7 @@ int main(int argc, char** argv)
     // create vertex shader
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    const char* vertexShaderSource = "#version 330 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
-        "layout (location = 1) in vec2 aTexCoord;\n"
-        "out vec3 ourColor;\n"
-        "out vec2 TexCoord;\n"
-        "uniform mat4 model;\n"
-        "uniform mat4 view;\n"
-        "uniform mat4 projection;\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
-        "   TexCoord = aTexCoord;\n"
-        "}\0";
+    
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
     int  success;
@@ -197,15 +71,6 @@ int main(int argc, char** argv)
     }
 
     // create fragment shader
-    const char* fragmentShaderSource = "#version 330 core\n"
-        "out vec4 FragColor;\n"
-        "in vec2 TexCoord;\n"
-        "uniform vec4 ourColor;"
-        "uniform sampler2D ourTexture;\n"
-        "void main()\n"
-        "{\n"
-        "    FragColor = texture(ourTexture, TexCoord) * ourColor;\n"
-        "}\0";
     unsigned int fragmentShader;
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
@@ -228,7 +93,6 @@ int main(int argc, char** argv)
     // generate texture
     unsigned int texture_soil, texture_crops, texture_tomoko;
     unsigned int texture_bearing[4];
-    const char* bearing_filenames[] = {"W.jpg", "S.jpg", "E.jpg", "N.jpg"};
 
     glGenTextures(1, &texture_soil);
     glBindTexture(GL_TEXTURE_2D, texture_soil);
@@ -238,7 +102,7 @@ int main(int argc, char** argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true);
-    unsigned char* data = stbi_load("soil.jpg", &width, &height, &nrChannels, 0);
+    unsigned char* data = stbi_load("img/soil.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -252,7 +116,7 @@ int main(int argc, char** argv)
 
     glGenTextures(1, &texture_crops);
     glBindTexture(GL_TEXTURE_2D, texture_crops);
-    data = stbi_load("cornfield.jpg", &width, &height, &nrChannels, 0);
+    data = stbi_load("img/cornfield.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -266,7 +130,7 @@ int main(int argc, char** argv)
 
     glGenTextures(1, &texture_tomoko);
     glBindTexture(GL_TEXTURE_2D, texture_tomoko);
-    data = stbi_load("tomoko.jpg", &width, &height, &nrChannels, 0);
+    data = stbi_load("img/tomoko.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -296,17 +160,6 @@ int main(int argc, char** argv)
     }
 
     // configure ground
-    float vertices[] = {
-             20.0f,   20.0f, 0.0f,   1.0f, 1.0f,
-             20.0f,  -20.0f, 0.0f,   1.0f, 0.0f,
-            -20.0f,  -20.0f, 0.0f,   0.0f, 0.0f,
-            -20.0f,   20.0f, 0.0f,   0.0f, 1.0f
-    };
-    unsigned int indices[] = {
-    0, 1, 3,
-    1, 2, 3
-    };
-    
     unsigned int EBO_soil, VBO_soil, VAO_soil;
     glGenVertexArrays(1, &VAO_soil);
     glGenBuffers(1, &VBO_soil);
@@ -373,12 +226,6 @@ int main(int argc, char** argv)
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    float brn_vertices[] = {
-             4.0f,   4.0f, 0.0f,   0.0f, 1.0f,
-             4.0f,  -4.0f, 0.0f,   0.0f, 0.0f,
-            -4.0f,  -4.0f, 0.0f,   1.0f, 0.0f,
-            -4.0f,   4.0f, 0.0f,   1.0f, 1.0f
-    };
     glm::vec3 brnPositions[] = {
         glm::vec3(20.0f,  10.0f,  0.0f),
         glm::vec3(0.0f,  10.0f, -20.0f),
