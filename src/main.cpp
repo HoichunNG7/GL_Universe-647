@@ -71,16 +71,21 @@ int main(int argc, char** argv)
     }
 
     // create fragment shader
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    unsigned int fragmentShader, lightFragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER); 
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
+
+    lightFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(lightFragmentShader, 1, &lightFragmentShaderSource, NULL);
+    glCompileShader(lightFragmentShader);
 
     // create program and link shaders
     unsigned int shaderProgram;
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
+    // glAttachShader(shaderProgram, lightFragmentShader);
     glLinkProgram(shaderProgram);
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success); // exception handling
     if (!success) {
@@ -89,6 +94,7 @@ int main(int argc, char** argv)
     }
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+    // glDeleteShader(lightFragmentShader);
 
     // generate texture
     unsigned int texture_soil, texture_crops, texture_tomoko;
@@ -185,18 +191,6 @@ int main(int argc, char** argv)
     glBindVertexArray(0);
 
     // configure others
-    glm::vec3 cubePositions[] = {
-        glm::vec3(0.0f,  1.0f,  0.0f),
-        glm::vec3(5.0f,  1.0f, 0.0f),
-        glm::vec3(5.0f, 1.0f, 5.0f),
-        glm::vec3(0.0f, 1.0f, 5.0f),
-        glm::vec3(-5.0f, 1.0f, 5.0f),
-        glm::vec3(-5.0f,  1.0f, 0.0f),
-        glm::vec3(-5.0f, 1.0f, -5.0f),
-        glm::vec3(0.0f,  1.0f, -5.0f),
-        glm::vec3(5.0f,  1.0f, -5.0f),
-        glm::vec3(10.0f,  1.0f, 10.0f)
-    };
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -225,13 +219,6 @@ int main(int argc, char** argv)
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-
-    glm::vec3 brnPositions[] = {
-        glm::vec3(20.0f,  10.0f,  0.0f),
-        glm::vec3(0.0f,  10.0f, -20.0f),
-        glm::vec3(-20.0f, 10.0f, 0.0f),
-        glm::vec3(0.0f, 10.0f, 20.0f)
-    };
 
     unsigned int EBO_brn, VBO_brn, VAO_brn;
     glGenVertexArrays(1, &VAO_brn);
@@ -281,7 +268,7 @@ int main(int argc, char** argv)
         int projLoc = glGetUniformLocation(shaderProgram, "projection");
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
         int colorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-        glUniform4f(colorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+        glUniform4f(colorLocation, 0.5f, 0.5f, 0.5f, 1.0f);
 
         glBindTexture(GL_TEXTURE_2D, texture_soil);
         glBindVertexArray(VAO_soil);
@@ -329,15 +316,15 @@ int main(int argc, char** argv)
             judgeCollision = check_collision(currentX-0.8, currentZ-0.8, 1.6, cubePositions[i][0]-1, cubePositions[i][2]-1, 2);
             if (judgeCollision)
             {
-                glUniform4f(colorLocation, 5.0f, 5.0f, 5.0f, 1.0f);
+                glUniform4f(colorLocation, 2.0f, 2.0f, 2.0f, 1.0f);
             }
             else
             {
-                glUniform4f(colorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+                glUniform4f(colorLocation, 0.7f, 0.7f, 0.7f, 1.0f);
             }
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        } // crops
 
         // draw character
         projLoc = glGetUniformLocation(shaderProgram, "projection");
