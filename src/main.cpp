@@ -16,6 +16,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void character_random_move();
 bool check_collision(float ax, float az, float aSize, float bx, float bz, float bSize);
+void create_shader(unsigned int& shader, const int shader_type, const char** source);
 
 std::random_device rd;
 std::default_random_engine eng(rd());
@@ -56,29 +57,15 @@ int main(int argc, char** argv)
     glEnable(GL_DEPTH_TEST); // enabling Z-buffer
 
     // create vertex shader
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    int  success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success); // exception handling
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
+    unsigned int vertexShader, reducedVertexShader;
+    create_shader(vertexShader, GL_VERTEX_SHADER, &vertexShaderSource);
+    create_shader(reducedVertexShader, GL_VERTEX_SHADER, &reducedVertexShaderSource);
 
     // create fragment shader
-    unsigned int fragmentShader, lightFragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER); 
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    lightFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(lightFragmentShader, 1, &lightFragmentShaderSource, NULL);
-    glCompileShader(lightFragmentShader);
+    unsigned int fragmentShader, illumModelFragmentShader, lightFragmentShader;
+    create_shader(fragmentShader, GL_FRAGMENT_SHADER, &fragmentShaderSource);
+    create_shader(illumModelFragmentShader, GL_FRAGMENT_SHADER, &illumModelFragmentShaderSource);
+    create_shader(lightFragmentShader, GL_FRAGMENT_SHADER, &lightFragmentShaderSource);
 
     // create program and link shaders
     unsigned int shaderProgram;
@@ -87,6 +74,9 @@ int main(int argc, char** argv)
     glAttachShader(shaderProgram, fragmentShader);
     // glAttachShader(shaderProgram, lightFragmentShader);
     glLinkProgram(shaderProgram);
+
+    int  success;
+    char infoLog[512];
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success); // exception handling
     if (!success) {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
@@ -477,4 +467,30 @@ bool check_collision(float ax, float az, float aSize, float bx, float bz, float 
     bool collisionZ = az + aSize >= bz && bz + bSize >= az;
 
     return collisionX && collisionZ;
+}
+
+void create_shader(unsigned int& shader, const int shader_type, const char** source)
+{
+    shader = glCreateShader(shader_type);
+
+    glShaderSource(shader, 1, source, NULL);
+    glCompileShader(shader);
+
+    int  success;
+    char infoLog[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success); // exception handling
+    if (!success)
+    {
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        if (shader_type == GL_VERTEX_SHADER)
+        {
+            std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+        }
+        else
+        {
+            std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+        }
+    }
+
+    return;
 }
