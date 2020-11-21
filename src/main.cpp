@@ -17,6 +17,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void character_random_move();
 bool check_collision(float ax, float az, float aSize, float bx, float bz, float bSize);
 void create_shader(unsigned int& shader, const int shader_type, const char** source);
+void generate_texture(unsigned int& texture_id, const char* image_filename);
 
 std::random_device rd;
 std::default_random_engine eng(rd());
@@ -103,69 +104,18 @@ int main(int argc, char** argv)
     unsigned int texture_soil, texture_crops, texture_tomoko;
     unsigned int texture_bearing[4];
 
-    glGenTextures(1, &texture_soil);
-    glBindTexture(GL_TEXTURE_2D, texture_soil);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true);
-    unsigned char* data = stbi_load("img/soil.jpg", &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
 
-    glGenTextures(1, &texture_crops);
-    glBindTexture(GL_TEXTURE_2D, texture_crops);
-    data = stbi_load("img/cornfield.jpg", &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
-
-    glGenTextures(1, &texture_tomoko);
-    glBindTexture(GL_TEXTURE_2D, texture_tomoko);
-    data = stbi_load("img/tomoko.jpg", &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
-
+    generate_texture(texture_soil, "img/soil.jpg");
+    generate_texture(texture_crops, "img/cornfield.jpg");
+    generate_texture(texture_tomoko, "img/tomoko.jpg");
     for (int i = 0; i < 4; i++)
     {
-        glGenTextures(1, &(texture_bearing[i]));
-        glBindTexture(GL_TEXTURE_2D, texture_bearing[i]);
-        data = stbi_load(bearing_filenames[i], &width, &height, &nrChannels, 0);
-        if (data)
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        }
-        else
-        {
-            std::cout << "Failed to load texture" << std::endl;
-        }
-        stbi_image_free(data);
+        generate_texture(texture_bearing[i], bearing_filenames[i]);
     }
 
     // configure ground
@@ -301,10 +251,6 @@ int main(int argc, char** argv)
             model = glm::rotate(model, glm::radians((i+1) * 90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             modelLoc = glGetUniformLocation(shaderProgram, "model");
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-            viewLoc = glGetUniformLocation(shaderProgram, "view");
-            glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-            projLoc = glGetUniformLocation(shaderProgram, "projection");
-            glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
             colorLocation = glGetUniformLocation(shaderProgram, "ourColor");
             glUniform4f(colorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -314,11 +260,6 @@ int main(int argc, char** argv)
         }
 
         // draw others
-        projLoc = glGetUniformLocation(shaderProgram, "projection");
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-        viewLoc = glGetUniformLocation(shaderProgram, "view");
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-
         glBindTexture(GL_TEXTURE_2D, texture_crops);
         glBindVertexArray(VAO);
         bool judgeCollision;
@@ -344,11 +285,6 @@ int main(int argc, char** argv)
         } // crops
 
         // draw character
-        projLoc = glGetUniformLocation(shaderProgram, "projection");
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-        viewLoc = glGetUniformLocation(shaderProgram, "view");
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-
         character_random_move(); // calculate current position
         glBindTexture(GL_TEXTURE_2D, texture_tomoko);
         glBindVertexArray(VAO_char);
@@ -537,6 +473,27 @@ void create_shader(unsigned int& shader, const int shader_type, const char** sou
             std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
         }
     }
+
+    return;
+}
+
+void generate_texture(unsigned int& texture_id, const char* image_filename)
+{
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load(image_filename, &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
 
     return;
 }
