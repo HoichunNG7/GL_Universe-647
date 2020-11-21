@@ -1,5 +1,5 @@
 #include <glad/glad.h>
-#include <glfw3.h>
+#include <GLFW/glfw3.h>
 #include <iostream>
 #include <random>
 #include <math.h>
@@ -68,12 +68,18 @@ int main(int argc, char** argv)
     create_shader(lightFragmentShader, GL_FRAGMENT_SHADER, &lightFragmentShaderSource);
 
     // create program and link shaders
-    unsigned int shaderProgram;
+    unsigned int shaderProgram, illumProgram;
+
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
-    // glAttachShader(shaderProgram, lightFragmentShader);
     glLinkProgram(shaderProgram);
+
+    illumProgram = glCreateProgram();
+    glAttachShader(illumProgram, reducedVertexShader);
+    // glAttachShader(illumProgram, illumModelFragmentShader);
+    glAttachShader(illumProgram, lightFragmentShader);
+    glLinkProgram(illumProgram);
 
     int  success;
     char infoLog[512];
@@ -82,9 +88,16 @@ int main(int argc, char** argv)
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINK_FAILED\n" << infoLog << std::endl;
     }
+    glGetProgramiv(illumProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(illumProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::ILLUM::PROGRAM::LINK_FAILED\n" << infoLog << std::endl;
+    }
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    // glDeleteShader(lightFragmentShader);
+    glDeleteShader(reducedVertexShader);
+    glDeleteShader(lightFragmentShader);
+    glDeleteShader(illumModelFragmentShader);
 
     // generate texture
     unsigned int texture_soil, texture_crops, texture_tomoko;
@@ -227,6 +240,20 @@ int main(int argc, char** argv)
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    // configure light source
+    unsigned int VBO_light, VAO_light;
+    glGenVertexArrays(1, &VAO_light);
+    glGenBuffers(1, &VBO_light);
+
+    glBindVertexArray(VAO_light);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_light);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
     // render loop
     while (!glfwWindowShouldClose(window))
     {
@@ -295,7 +322,7 @@ int main(int argc, char** argv)
         glBindTexture(GL_TEXTURE_2D, texture_crops);
         glBindVertexArray(VAO);
         bool judgeCollision;
-        for (unsigned int i = 0; i < 10; i++)
+        for (unsigned int i = 0; i < 9; i++)
         {
             model = glm::mat4(1.0f);
             model = glm::translate(model, cubePositions[i]);
@@ -335,6 +362,23 @@ int main(int argc, char** argv)
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
+        // Now we switch to 'Illumination Sector'
+        glUseProgram(illumProgram);
+
+        // draw light source
+        projLoc = glGetUniformLocation(illumProgram, "projection");
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        viewLoc = glGetUniformLocation(illumProgram, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPosition);
+        modelLoc = glGetUniformLocation(illumProgram, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+        glBindVertexArray(VAO_light);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -342,7 +386,9 @@ int main(int argc, char** argv)
     glDeleteVertexArrays(1, &VAO_soil);
     glDeleteBuffers(1, &VBO_soil);
     glDeleteBuffers(1, &EBO_soil);
+
     glDeleteProgram(shaderProgram);
+    glDeleteProgram(illumProgram);
 
     glfwTerminate();
     return 0;

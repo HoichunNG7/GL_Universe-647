@@ -142,7 +142,6 @@ glm::vec3 cubePositions[] = {
     glm::vec3(-5.0f, 1.0f, -5.0f),
     glm::vec3(0.0f,  1.0f, -5.0f),
     glm::vec3(5.0f,  1.0f, -5.0f),
-    glm::vec3(21.0f,  5.0f, 21.0f)
 };
 
 glm::vec3 brnPositions[] = {
@@ -151,6 +150,8 @@ glm::vec3 brnPositions[] = {
     glm::vec3(-20.0f, 10.0f, 0.0f),
     glm::vec3(0.0f, 10.0f, 20.0f)
 };
+
+glm::vec3 lightPosition = glm::vec3(21.0f, 5.0f, 21.0f);
 
 // object indices
 unsigned int indices[] = {
