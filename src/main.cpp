@@ -36,6 +36,12 @@ int main(int argc, char** argv)
     plyBunny->get_ply_model("models/bun_zipper_res4.ply");
     // plyModel1->print_all_lists(); // test
 
+    auto plyDragon = new PlyModel();
+    plyDragon->get_ply_model("models/dragon_vrip_res4.ply");
+
+    auto plyHappy = new PlyModel();
+    plyHappy->get_ply_model("models/happy_vrip_res4.ply");
+
     // initialize and configure
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -163,12 +169,20 @@ int main(int argc, char** argv)
     configure_object_with_ebo(VAO_brn, 5, brn_vertices, indices, sizeof(brn_vertices), sizeof(indices));
 
     // configure ply models
-    unsigned int VAO_bunny;
+    unsigned int VAO_bunny, VAO_dragon, VAO_happy;
     int v_num = plyBunny->get_vertex_num();
     int f_num = plyBunny->get_face_num();
     int v_size = sizeof(float) * 3 * v_num;
     int f_size = sizeof(unsigned int) * 3 * f_num;
     configure_object_with_ebo(VAO_bunny, 3, plyBunny->get_model_vertices(), plyBunny->get_model_faces(), v_size, f_size);
+
+    v_size = sizeof(float) * 3 * plyDragon->get_vertex_num();
+    f_size = sizeof(unsigned int) * 3 * plyDragon->get_face_num();
+    configure_object_with_ebo(VAO_dragon, 3, plyDragon->get_model_vertices(), plyDragon->get_model_faces(), v_size, f_size);
+
+    v_size = sizeof(float) * 3 * plyHappy->get_vertex_num();
+    f_size = sizeof(unsigned int) * 3 * plyHappy->get_face_num();
+    configure_object_with_ebo(VAO_happy, 3, plyHappy->get_model_vertices(), plyHappy->get_model_faces(), v_size, f_size);
 
     // configure light source
     unsigned int VBO_light, VAO_light;
@@ -289,7 +303,7 @@ int main(int argc, char** argv)
 
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightPosition);
-        modelLoc = glGetUniformLocation(illumProgram, "model");
+        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
         glBindVertexArray(VAO_light);
@@ -299,11 +313,28 @@ int main(int argc, char** argv)
         model = glm::mat4(1.0f);
         model = glm::translate(model, bunnyPosition);
         model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
-        modelLoc = glGetUniformLocation(illumProgram, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
         glBindVertexArray(VAO_bunny);
         f_num = plyBunny->get_face_num();
+        glDrawElements(GL_TRIANGLES, 3 * f_num, GL_UNSIGNED_INT, 0);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, dragonPosition);
+        model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+        glBindVertexArray(VAO_dragon);
+        f_num = plyDragon->get_face_num();
+        glDrawElements(GL_TRIANGLES, 3 * f_num, GL_UNSIGNED_INT, 0);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, happyPosition);
+        model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+        glBindVertexArray(VAO_happy);
+        f_num = plyHappy->get_face_num();
         glDrawElements(GL_TRIANGLES, 3 * f_num, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
