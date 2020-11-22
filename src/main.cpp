@@ -32,8 +32,9 @@ float angle = distr1(eng);
 int main(int argc, char** argv)
 {
     // load ply models
-    auto plyModel1 = new PlyModel();
-    plyModel1->get_ply_model("models/bun_zipper_res4.ply");
+    auto plyBunny = new PlyModel();
+    plyBunny->get_ply_model("models/bun_zipper_res4.ply");
+    // plyModel1->print_all_lists(); // test
 
     // initialize and configure
     glfwInit();
@@ -158,8 +159,16 @@ int main(int argc, char** argv)
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    unsigned int EBO_brn, VBO_brn, VAO_brn;
+    unsigned int VAO_brn;
     configure_object_with_ebo(VAO_brn, 5, brn_vertices, indices, sizeof(brn_vertices), sizeof(indices));
+
+    // configure ply models
+    unsigned int VAO_bunny;
+    int v_num = plyBunny->get_vertex_num();
+    int f_num = plyBunny->get_face_num();
+    int v_size = sizeof(float) * 3 * v_num;
+    int f_size = sizeof(unsigned int) * 3 * f_num;
+    configure_object_with_ebo(VAO_bunny, 3, plyBunny->get_model_vertices(), plyBunny->get_model_faces(), v_size, f_size);
 
     // configure light source
     unsigned int VBO_light, VAO_light;
@@ -285,6 +294,17 @@ int main(int argc, char** argv)
 
         glBindVertexArray(VAO_light);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        // draw models
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, bunnyPosition);
+        model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
+        modelLoc = glGetUniformLocation(illumProgram, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+        glBindVertexArray(VAO_bunny);
+        f_num = plyBunny->get_face_num();
+        glDrawElements(GL_TRIANGLES, 3 * f_num, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

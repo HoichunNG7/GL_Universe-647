@@ -153,6 +153,8 @@ glm::vec3 brnPositions[] = {
 
 glm::vec3 lightPosition = glm::vec3(21.0f, 5.0f, 21.0f);
 
+glm::vec3 bunnyPosition = glm::vec3(16.0f, 0.0f, 16.0f);
+
 // object indices
 unsigned int indices[] = {
 0, 1, 3,

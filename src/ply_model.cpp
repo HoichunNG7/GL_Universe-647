@@ -139,3 +139,20 @@ void PlyModel::parse_face_line(string line)
 
     return;
 }
+
+void PlyModel::print_all_lists()
+{
+    cout << "Vertex List: " << endl;
+    for (int i = 0; i < this->vertex_num; ++i)
+    {
+        cout << "[" << i << "]: " << this->vertex_list[3 * i] << ", " << this->vertex_list[3 * i + 1] << ", " << this->vertex_list[3 * i + 2] << endl;
+    }
+
+    cout << "\nFace List: " << endl;
+    for (int i = 0; i < this->face_num; ++i)
+    {
+        cout << "[" << i << "]: " << this->face_list[3 * i] << ", " << this->face_list[3 * i + 1] << ", " << this->face_list[3 * i + 2] << endl;
+    }
+
+    return;
+}

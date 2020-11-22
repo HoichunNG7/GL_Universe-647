@@ -10,6 +10,14 @@ public:
 
     void get_ply_model(const char* filename);
 
+    int get_vertex_num();
+    int get_face_num();
+
+    float* get_model_vertices();
+    unsigned int* get_model_faces();
+
+    void print_all_lists();
+
 private:
     int vertex_num;  // overall size of vertex list
     int face_num;  // overall size of face list
@@ -20,16 +28,7 @@ private:
     float* vertex_list;
     unsigned int* face_list;
 
-    int get_vertex_num();
-
-    int get_face_num();
-
-    float* get_model_vertices();
-
-    unsigned int* get_model_faces();
-
     void parse_vertex_line(std::string line);
-
     void parse_face_line(std::string line);
 };
 
