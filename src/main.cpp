@@ -19,6 +19,7 @@ void character_random_move();
 bool check_collision(float ax, float az, float aSize, float bx, float bz, float bSize);
 void create_shader(unsigned int& shader, const int shader_type, const char** source);
 void generate_texture(unsigned int& texture_id, const char* image_filename);
+void configure_object_with_ebo(unsigned int& VAO_obj, int coord_size, const float* vertex_coords, unsigned int* face_list, int v_size, int f_size);
 
 std::random_device rd;
 std::default_random_engine eng(rd());
@@ -124,29 +125,8 @@ int main(int argc, char** argv)
     }
 
     // configure ground
-    unsigned int EBO_soil, VBO_soil, VAO_soil;
-    glGenVertexArrays(1, &VAO_soil);
-    glGenBuffers(1, &VBO_soil);
-    glGenBuffers(1, &EBO_soil);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO_soil);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO_soil);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_soil);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0);
+    unsigned int VAO_soil;
+    configure_object_with_ebo(VAO_soil, 5, vertices, indices, sizeof(vertices), sizeof(indices));
 
     // configure others
     unsigned int VBO, VAO;
@@ -179,21 +159,7 @@ int main(int argc, char** argv)
     glEnableVertexAttribArray(1);
 
     unsigned int EBO_brn, VBO_brn, VAO_brn;
-    glGenVertexArrays(1, &VAO_brn);
-    glGenBuffers(1, &VBO_brn);
-    glGenBuffers(1, &EBO_brn);
-    
-    glBindVertexArray(VAO_brn);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO_brn);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(brn_vertices), brn_vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_brn);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    configure_object_with_ebo(VAO_brn, 5, brn_vertices, indices, sizeof(brn_vertices), sizeof(indices));
 
     // configure light source
     unsigned int VBO_light, VAO_light;
@@ -323,10 +289,6 @@ int main(int argc, char** argv)
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-    glDeleteVertexArrays(1, &VAO_soil);
-    glDeleteBuffers(1, &VBO_soil);
-    glDeleteBuffers(1, &EBO_soil);
 
     glDeleteProgram(shaderProgram);
     glDeleteProgram(illumProgram);
@@ -500,5 +462,38 @@ void generate_texture(unsigned int& texture_id, const char* image_filename)
     }
     stbi_image_free(data);
 
+    return;
+}
+
+void configure_object_with_ebo(unsigned int& VAO_obj, int coord_size, const float* vertex_coords, unsigned int* face_list, int v_size, int f_size)
+{
+    unsigned int VBO_obj, EBO_obj;
+    glGenVertexArrays(1, &VAO_obj);
+    glGenBuffers(1, &VBO_obj);
+    glGenBuffers(1, &EBO_obj);
+
+    glBindVertexArray(VAO_obj);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_obj);
+    glBufferData(GL_ARRAY_BUFFER, v_size, vertex_coords, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_obj);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, f_size, face_list, GL_STATIC_DRAW);
+
+    if (coord_size == 5)
+    {
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+    }
+    else if (coord_size == 3)
+    {
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+    }
+    else
+    {
+        std::cout << "Error: Unexpected dimention of coordinates which may cause ambiguity." << std::endl;
+    }
+    
     return;
 }
