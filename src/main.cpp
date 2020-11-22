@@ -9,6 +9,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "ply_model.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -29,6 +30,10 @@ float angle = distr1(eng);
 
 int main(int argc, char** argv)
 {
+    // load ply models
+    auto plyModel1 = new PlyModel();
+    plyModel1->get_ply_model("models/bun_zipper_res4.ply");
+
     // initialize and configure
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
