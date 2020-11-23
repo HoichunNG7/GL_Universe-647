@@ -19,11 +19,11 @@ float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
 
 // camera initial settings
-glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraPos = glm::vec3(11.0f, 1.0f, 11.0f);
+glm::vec3 cameraFront = glm::vec3(1.0f, 0.0f, 1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 float lastX = 400, lastY = 300;
-float yaw = -90.0f;
+float yaw = 45.0f;
 float pitch = 0.0f;
 float fov = 45.0f;
 bool firstMouse = true;
