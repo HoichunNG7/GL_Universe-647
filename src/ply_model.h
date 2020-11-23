@@ -10,6 +10,8 @@ public:
 
     void get_ply_model(const char* filename);
 
+    void add_normal_vectors();
+
     int get_vertex_num();
     int get_face_num();
 
@@ -30,6 +32,8 @@ private:
 
     void parse_vertex_line(std::string line);
     void parse_face_line(std::string line);
+
+    void get_3d_cross_product(float& r1, float& r2, float&r3, float x1, float x2, float x3, float y1, float y2, float y3);
 };
 
 #endif

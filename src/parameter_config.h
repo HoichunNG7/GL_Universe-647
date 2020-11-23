@@ -151,7 +151,7 @@ glm::vec3 brnPositions[] = {
     glm::vec3(0.0f, 10.0f, 20.0f)
 };
 
-glm::vec3 lightPosition = glm::vec3(21.0f, 8.0f, 21.0f);
+glm::vec3 lightPosition = glm::vec3(21.0f, 6.0f, 21.0f);
 
 glm::vec3 bunnyPosition = glm::vec3(16.0f, 0.0f, 16.0f);
 
@@ -165,7 +165,7 @@ unsigned int indices[] = {
 1, 2, 3
 };
 
-// object colors
+// lighting strength & object colors
 glm::vec3 modelColor = glm::vec3(1.0f, 0.5f, 0.31f);
 glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
@@ -210,8 +210,12 @@ const char* illumModelFragmentShaderSource = "#version 330 core\n"
 "uniform vec3 lightColor;\n"
 "void main()\n"
 "{\n"
-"    FragColor = vec4(lightColor * objectColor, 1.0);\n"
+"    float ambientStrength = 0.1;\n"
+"    vec3 ambient = ambientStrength * lightColor;\n"
+"    vec3 result = ambient * objectColor;\n"
+"    FragColor = vec4(result, 1.0);\n"
 "}\0";
+//"    FragColor = vec4(lightColor * objectColor, 1.0);\n"
 
 const char* lightFragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"

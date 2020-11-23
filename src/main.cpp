@@ -34,13 +34,16 @@ int main(int argc, char** argv)
     // load ply models
     auto plyBunny = new PlyModel();
     plyBunny->get_ply_model("models/bun_zipper_res4.ply");
-    // plyModel1->print_all_lists(); // test
+    plyBunny->add_normal_vectors();
+    // plyBunny->print_all_lists(); // test
 
     auto plyDragon = new PlyModel();
     plyDragon->get_ply_model("models/dragon_vrip_res4.ply");
+    plyDragon->add_normal_vectors();
 
     auto plyHappy = new PlyModel();
     plyHappy->get_ply_model("models/happy_vrip_res4.ply");
+    plyHappy->add_normal_vectors();
 
     // initialize and configure
     glfwInit();
@@ -176,17 +179,17 @@ int main(int argc, char** argv)
     unsigned int VAO_bunny, VAO_dragon, VAO_happy;
     int v_num = plyBunny->get_vertex_num();
     int f_num = plyBunny->get_face_num();
-    int v_size = sizeof(float) * 3 * v_num;
+    int v_size = sizeof(float) * 6 * v_num;
     int f_size = sizeof(unsigned int) * 3 * f_num;
-    configure_object_with_ebo(VAO_bunny, 3, plyBunny->get_model_vertices(), plyBunny->get_model_faces(), v_size, f_size);
+    configure_object_with_ebo(VAO_bunny, 6, plyBunny->get_model_vertices(), plyBunny->get_model_faces(), v_size, f_size);
 
-    v_size = sizeof(float) * 3 * plyDragon->get_vertex_num();
+    v_size = sizeof(float) * 6 * plyDragon->get_vertex_num();
     f_size = sizeof(unsigned int) * 3 * plyDragon->get_face_num();
-    configure_object_with_ebo(VAO_dragon, 3, plyDragon->get_model_vertices(), plyDragon->get_model_faces(), v_size, f_size);
+    configure_object_with_ebo(VAO_dragon, 6, plyDragon->get_model_vertices(), plyDragon->get_model_faces(), v_size, f_size);
 
-    v_size = sizeof(float) * 3 * plyHappy->get_vertex_num();
+    v_size = sizeof(float) * 6 * plyHappy->get_vertex_num();
     f_size = sizeof(unsigned int) * 3 * plyHappy->get_face_num();
-    configure_object_with_ebo(VAO_happy, 3, plyHappy->get_model_vertices(), plyHappy->get_model_faces(), v_size, f_size);
+    configure_object_with_ebo(VAO_happy, 6, plyHappy->get_model_vertices(), plyHappy->get_model_faces(), v_size, f_size);
 
     // configure light source
     unsigned int VBO_light, VAO_light;
@@ -557,6 +560,13 @@ void configure_object_with_ebo(unsigned int& VAO_obj, int coord_size, const floa
     {
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
+    }
+    else if (coord_size == 6)
+    {
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
     }
     else
     {
