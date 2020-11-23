@@ -19,6 +19,7 @@ public:
     unsigned int* get_model_faces();
 
     void print_all_lists();
+    void print_bounding_box();
 
 private:
     int vertex_num;  // overall size of vertex list
@@ -29,6 +30,9 @@ private:
 
     float* vertex_list;
     unsigned int* face_list;
+
+    float max_coord[3]; // AABB bounding box (x_max, y_max, z_max)
+    float min_coord[3]; // AABB bounding box (x_min, y_min, z_min)
 
     void parse_vertex_line(std::string line);
     void parse_face_line(std::string line);

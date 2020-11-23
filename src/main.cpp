@@ -36,6 +36,7 @@ int main(int argc, char** argv)
     plyBunny->get_ply_model("models/bun_zipper_res4.ply");
     plyBunny->add_normal_vectors();
     // plyBunny->print_all_lists(); // test
+    // plyBunny->print_bounding_box(); // test
 
     auto plyDragon = new PlyModel();
     plyDragon->get_ply_model("models/dragon_vrip_res4.ply");

@@ -87,6 +87,11 @@ PlyModel::PlyModel()
     this->current_face = -1;
     this->vertex_list = NULL;
     this->face_list = NULL;
+    for (int i = 0; i < 3; ++i)
+    {
+        this->max_coord[i] = -100000.0;
+        this->min_coord[i] = 100000.0;
+    }
     return;
 }
 
@@ -113,13 +118,25 @@ unsigned int* PlyModel::get_model_faces()
 void PlyModel::parse_vertex_line(string line)
 {
     string temp;
+    float coord;
 
     istringstream is(line);
     for (int i = 0; i < 3; ++i)
     {
         is >> temp;
         this->current_vertex++;
-        this->vertex_list[this->current_vertex] = stof(temp);
+        coord = stof(temp);
+        this->vertex_list[this->current_vertex] = coord;
+
+        // update model's bounding box
+        if (coord < this->min_coord[i])
+        {
+            this->min_coord[i] = coord;
+        }
+        if (coord > this->max_coord[i])
+        {
+            this->max_coord[i] = coord;
+        }
     }
 
     this->current_vertex += 3;
@@ -156,6 +173,15 @@ void PlyModel::print_all_lists()
     {
         cout << "[" << i << "]: " << this->face_list[3 * i] << ", " << this->face_list[3 * i + 1] << ", " << this->face_list[3 * i + 2] << endl;
     }
+
+    return;
+}
+
+void PlyModel::print_bounding_box()
+{
+    cout << "Bounding Box: " << endl;
+    cout << "(" << this->min_coord[0] << ", " << this->min_coord[1] << ", " << this->min_coord[2] << ")" << endl;
+    cout << "--> (" << this->max_coord[0] << ", " << this->max_coord[1] << ", " << this->max_coord[2] << ")" << endl;
 
     return;
 }
