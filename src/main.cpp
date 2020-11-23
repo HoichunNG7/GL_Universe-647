@@ -74,9 +74,10 @@ int main(int argc, char** argv)
     glEnable(GL_DEPTH_TEST); // enabling Z-buffer
 
     // create vertex shader
-    unsigned int vertexShader, reducedVertexShader;
+    unsigned int vertexShader, reducedVertexShader, illumVertexShader;
     create_shader(vertexShader, GL_VERTEX_SHADER, &vertexShaderSource);
     create_shader(reducedVertexShader, GL_VERTEX_SHADER, &reducedVertexShaderSource);
+    create_shader(illumVertexShader, GL_VERTEX_SHADER, &illumVertexShaderSource);
 
     // create fragment shader
     unsigned int fragmentShader, illumModelFragmentShader, lightFragmentShader;
@@ -98,7 +99,7 @@ int main(int argc, char** argv)
     glLinkProgram(illumProgram);
 
     illumObjectProgram = glCreateProgram();
-    glAttachShader(illumObjectProgram, reducedVertexShader);
+    glAttachShader(illumObjectProgram, illumVertexShader);
     glAttachShader(illumObjectProgram, illumModelFragmentShader);
     glLinkProgram(illumObjectProgram);
 
@@ -205,6 +206,15 @@ int main(int argc, char** argv)
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    // constant settings
+    glUseProgram(illumObjectProgram);
+    int objColorLoc = glGetUniformLocation(illumObjectProgram, "objectColor");
+    int lightColorLoc = glGetUniformLocation(illumObjectProgram, "lightColor");
+    int lightPosLoc = glGetUniformLocation(illumObjectProgram, "lightPos");
+    glUniform3f(objColorLoc, 1.0f, 0.5f, 0.31f);
+    glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
+    glUniform3f(lightPosLoc, lightPosition[0], lightPosition[1], lightPosition[2]);
+
     // render loop
     while (!glfwWindowShouldClose(window))
     {
@@ -310,7 +320,7 @@ int main(int argc, char** argv)
 
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightPosition);
-        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+        model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.4f));
         modelLoc = glGetUniformLocation(illumProgram, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
@@ -325,10 +335,9 @@ int main(int argc, char** argv)
         viewLoc = glGetUniformLocation(illumObjectProgram, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         modelLoc = glGetUniformLocation(illumObjectProgram, "model");
-        int objColorLoc = glGetUniformLocation(illumObjectProgram, "objectColor");
-        int lightColorLoc = glGetUniformLocation(illumObjectProgram, "lightColor");
-        glUniform3f(objColorLoc, 1.0f, 0.5f, 0.31f);
-        glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
+        
+        int viewPosLoc = glGetUniformLocation(illumObjectProgram, "viewPos");
+        glUniform3f(viewPosLoc, cameraPos[0], cameraPos[1], cameraPos[2]);
 
         model = glm::mat4(1.0f);
         model = glm::translate(model, bunnyPosition);
