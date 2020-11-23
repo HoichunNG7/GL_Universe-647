@@ -82,7 +82,7 @@ int main(int argc, char** argv)
     create_shader(lightFragmentShader, GL_FRAGMENT_SHADER, &lightFragmentShaderSource);
 
     // create program and link shaders
-    unsigned int shaderProgram, illumProgram;
+    unsigned int shaderProgram, illumProgram, illumObjectProgram;
 
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
@@ -91,9 +91,13 @@ int main(int argc, char** argv)
 
     illumProgram = glCreateProgram();
     glAttachShader(illumProgram, reducedVertexShader);
-    // glAttachShader(illumProgram, illumModelFragmentShader);
     glAttachShader(illumProgram, lightFragmentShader);
     glLinkProgram(illumProgram);
+
+    illumObjectProgram = glCreateProgram();
+    glAttachShader(illumObjectProgram, reducedVertexShader);
+    glAttachShader(illumObjectProgram, illumModelFragmentShader);
+    glLinkProgram(illumObjectProgram);
 
     int  success;
     char infoLog[512];
@@ -304,12 +308,25 @@ int main(int argc, char** argv)
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightPosition);
         model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+        modelLoc = glGetUniformLocation(illumProgram, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
         glBindVertexArray(VAO_light);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // draw models
+        glUseProgram(illumObjectProgram);
+
+        projLoc = glGetUniformLocation(illumObjectProgram, "projection");
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        viewLoc = glGetUniformLocation(illumObjectProgram, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        modelLoc = glGetUniformLocation(illumObjectProgram, "model");
+        int objColorLoc = glGetUniformLocation(illumObjectProgram, "objectColor");
+        int lightColorLoc = glGetUniformLocation(illumObjectProgram, "lightColor");
+        glUniform3f(objColorLoc, 1.0f, 0.5f, 0.31f);
+        glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
+
         model = glm::mat4(1.0f);
         model = glm::translate(model, bunnyPosition);
         model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));

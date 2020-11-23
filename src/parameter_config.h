@@ -165,6 +165,10 @@ unsigned int indices[] = {
 1, 2, 3
 };
 
+// object colors
+glm::vec3 modelColor = glm::vec3(1.0f, 0.5f, 0.31f);
+glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
 // shader source code
 const char* vertexShaderSource = "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
