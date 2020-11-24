@@ -153,11 +153,11 @@ glm::vec3 brnPositions[] = {
 
 glm::vec3 lightPosition = glm::vec3(21.0f, 6.0f, 21.0f);
 
-glm::vec3 bunnyPosition = glm::vec3(16.0f, 0.0f, 16.0f);
+glm::vec3 bunnyPosition = glm::vec3(16.0f, -0.5f, 16.0f);
 
-glm::vec3 dragonPosition = glm::vec3(16.0f, 0.0f, 12.0f);
+glm::vec3 dragonPosition = glm::vec3(16.0f, -0.5f, 12.0f);
 
-glm::vec3 happyPosition = glm::vec3(12.0f, 0.0f, 16.0f);
+glm::vec3 happyPosition = glm::vec3(12.0f, -0.5f, 16.0f);
 
 // object indices
 unsigned int indices[] = {

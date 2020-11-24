@@ -16,6 +16,7 @@ void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void character_random_move();
+void light_source_move();
 bool check_collision(float ax, float az, float aSize, float bx, float bz, float bSize);
 void create_shader(unsigned int& shader, const int shader_type, const char** source);
 void generate_texture(unsigned int& texture_id, const char* image_filename);
@@ -211,10 +212,9 @@ int main(int argc, char** argv)
     glUseProgram(illumObjectProgram);
     int objColorLoc = glGetUniformLocation(illumObjectProgram, "objectColor");
     int lightColorLoc = glGetUniformLocation(illumObjectProgram, "lightColor");
-    int lightPosLoc = glGetUniformLocation(illumObjectProgram, "lightPos");
+    int lightPosLoc;
     glUniform3f(objColorLoc, 1.0f, 0.5f, 0.31f);
     glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
-    glUniform3f(lightPosLoc, lightPosition[0], lightPosition[1], lightPosition[2]);
 
     // render loop
     while (!glfwWindowShouldClose(window))
@@ -314,6 +314,7 @@ int main(int argc, char** argv)
         glUseProgram(illumProgram);
 
         // draw light source
+        light_source_move();
         projLoc = glGetUniformLocation(illumProgram, "projection");
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
         viewLoc = glGetUniformLocation(illumProgram, "view");
@@ -331,12 +332,14 @@ int main(int argc, char** argv)
         // draw models
         glUseProgram(illumObjectProgram);
 
+        lightPosLoc = glGetUniformLocation(illumObjectProgram, "lightPos");
+        glUniform3f(lightPosLoc, lightPosition[0], lightPosition[1], lightPosition[2]);
         projLoc = glGetUniformLocation(illumObjectProgram, "projection");
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
         viewLoc = glGetUniformLocation(illumObjectProgram, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         modelLoc = glGetUniformLocation(illumObjectProgram, "model");
-        
+               
         int viewPosLoc = glGetUniformLocation(illumObjectProgram, "viewPos");
         glUniform3f(viewPosLoc, cameraPos[0], cameraPos[1], cameraPos[2]);
 
@@ -455,6 +458,17 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
         fov = 1.0f;
     if (fov >= 45.0f)
         fov = 45.0f;
+}
+
+void light_source_move()
+{
+    lightPosition[1] += delta / 5;
+    if (lightPosition[1] >= 12)
+    {
+        lightPosition[1] = 0;
+    }
+
+    return;
 }
 
 void character_random_move() 
